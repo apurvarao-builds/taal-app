@@ -17,7 +17,7 @@ export function JournalPage() {
 
   const { entries, loading, error, createEntry, updateEntry, deleteEntry } =
     useJournalEntries({ category: filters.category, entryType: filters.entryType })
-  const { projects } = useProjects()
+  const { projects, createProject } = useProjects()
 
   function openNew() {
     setEditEntry(null)
@@ -146,6 +146,7 @@ export function JournalPage() {
           onSubmit={handleSubmit}
           onCancel={closeModal}
           submitting={submitting}
+          onCreateProject={createProject}
         />
       </Modal>
 

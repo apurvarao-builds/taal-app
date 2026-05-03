@@ -148,6 +148,15 @@ export function BolLibraryPage() {
         />
       </Modal>
 
+      {/* Mobile FAB */}
+      <button
+        onClick={openNew}
+        className="md:hidden fixed bottom-24 right-4 w-14 h-14 bg-gold text-bg rounded-full shadow-lg flex items-center justify-center z-40 active:scale-95 transition-transform"
+        aria-label="Add recording"
+      >
+        <Plus size={24} />
+      </button>
+
       {/* Toast */}
       {toastMsg && (
         <div className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 bg-surface-2 border border-border text-text-main text-sm px-4 py-2.5 rounded-full shadow-xl z-50">

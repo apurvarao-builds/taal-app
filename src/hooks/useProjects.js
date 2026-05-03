@@ -27,13 +27,14 @@ export function useProjects() {
   useEffect(() => { fetch() }, [fetch])
 
   async function createProject(fields) {
-    const { error: err } = await supabase.from('projects').insert({
+    const { data, error: err } = await supabase.from('projects').insert({
       user_id: user.id,
       name: fields.name,
       description: fields.description || null,
-    })
+    }).select().single()
     if (err) throw err
     await fetch()
+    return data
   }
 
   async function updateProject(id, fields) {

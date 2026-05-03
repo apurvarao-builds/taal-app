@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { format } from 'date-fns'
+import { Plus, X } from 'lucide-react'
 import { Input, Textarea, Select } from '../ui/Input'
 import { Button } from '../ui/Button'
 import { AudioRecorderWidget } from './AudioRecorderWidget'
@@ -8,7 +9,7 @@ import { CATEGORIES, ENTRY_TYPES } from '../../lib/utils'
 
 const today = format(new Date(), 'yyyy-MM-dd')
 
-export function EntryForm({ entry, projects, onSubmit, onCancel, submitting }) {
+export function EntryForm({ entry, projects, onSubmit, onCancel, submitting, onCreateProject }) {
   const isEdit = Boolean(entry)
 
   const [fields, setFields] = useState({
@@ -20,6 +21,10 @@ export function EntryForm({ entry, projects, onSubmit, onCancel, submitting }) {
     project_id: entry?.project_id ?? '',
   })
   const [errors, setErrors] = useState({})
+
+  const [creatingProject, setCreatingProject] = useState(false)
+  const [newProjectName, setNewProjectName] = useState('')
+  const [projectBusy, setProjectBusy] = useState(false)
 
   const audioBlob = useRef(null)
   const audioDuration = useRef(null)
@@ -52,6 +57,22 @@ export function EntryForm({ entry, projects, onSubmit, onCancel, submitting }) {
     audioBlob.current = blob
     audioDuration.current = sec
     setHasNewAudio(true)
+  }
+
+  async function handleCreateProject(e) {
+    e?.preventDefault()
+    if (!newProjectName.trim() || !onCreateProject) return
+    setProjectBusy(true)
+    try {
+      const project = await onCreateProject({ name: newProjectName.trim() })
+      set('project_id', project.id)
+      setCreatingProject(false)
+      setNewProjectName('')
+    } catch {
+      // leave the input open so the user can retry
+    } finally {
+      setProjectBusy(false)
+    }
   }
 
   function handleClear() {
@@ -100,17 +121,59 @@ export function EntryForm({ entry, projects, onSubmit, onCancel, submitting }) {
           ))}
         </Select>
 
-        <Select
-          label="Project"
-          value={fields.project_id}
-          onChange={(e) => set('project_id', e.target.value)}
-        >
-          <option value="">No project</option>
-          {projects.map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </Select>
+        <div>
+          <Select
+            label="Project"
+            value={fields.project_id}
+            onChange={(e) => set('project_id', e.target.value)}
+          >
+            <option value="">No project</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </Select>
+          {onCreateProject && !creatingProject && (
+            <button
+              type="button"
+              onClick={() => setCreatingProject(true)}
+              className="mt-1 flex items-center gap-1 text-xs text-gold hover:text-gold-light transition-colors"
+            >
+              <Plus size={11} /> New project
+            </button>
+          )}
+        </div>
       </div>
+
+      {creatingProject && (
+        <div className="flex items-center gap-2">
+          <input
+            autoFocus
+            className="flex-1 bg-surface-2 border border-border rounded-lg px-3 py-1.5 text-sm text-text-main placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-gold/40"
+            placeholder="Project name"
+            value={newProjectName}
+            onChange={(e) => setNewProjectName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleCreateProject(e)
+              if (e.key === 'Escape') { setCreatingProject(false); setNewProjectName('') }
+            }}
+          />
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleCreateProject}
+            disabled={projectBusy || !newProjectName.trim()}
+          >
+            {projectBusy ? '…' : 'Create'}
+          </Button>
+          <button
+            type="button"
+            onClick={() => { setCreatingProject(false); setNewProjectName('') }}
+            className="text-muted hover:text-text-sub transition-colors"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
 
       <Textarea
         label="Notes"
