@@ -117,7 +117,7 @@ export function BolForm({ recording, onSubmit, onCancel, submitting }) {
         <input
           ref={fileInputRef}
           type="file"
-          accept="audio/*"
+          accept="audio/*,.opus"
           className="hidden"
           onChange={handleFileChange}
         />
