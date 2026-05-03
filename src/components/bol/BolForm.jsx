@@ -117,7 +117,7 @@ export function BolForm({ recording, onSubmit, onCancel, submitting }) {
         <input
           ref={fileInputRef}
           type="file"
-          accept="audio/*,.opus"
+          accept="audio/*,audio/mpeg,audio/mp4,audio/ogg,audio/wav,audio/webm,audio/opus,audio/aac,audio/x-m4a,audio/flac,.mp3,.m4a,.ogg,.wav,.opus,.aac,.flac,.webm"
           className="hidden"
           onChange={handleFileChange}
         />
