@@ -45,6 +45,14 @@ export function BolForm({ recording, onSubmit, onCancel, submitting }) {
   function handleFileChange(e) {
     const file = e.target.files?.[0]
     if (!file) return
+
+    const isAudio = file.type.startsWith('audio/') ||
+      /\.(mp3|m4a|ogg|wav|opus|aac|flac|webm)$/i.test(file.name)
+    if (!isAudio) {
+      setErrors((err) => ({ ...err, audio: 'Please select an audio file' }))
+      return
+    }
+    setErrors((err) => ({ ...err, audio: undefined }))
     setAudioFile(file)
 
     const url = URL.createObjectURL(file)
@@ -117,7 +125,7 @@ export function BolForm({ recording, onSubmit, onCancel, submitting }) {
         <input
           ref={fileInputRef}
           type="file"
-          accept="audio/*,audio/mpeg,audio/mp4,audio/ogg,audio/wav,audio/webm,audio/opus,audio/aac,audio/x-m4a,audio/flac,.mp3,.m4a,.ogg,.wav,.opus,.aac,.flac,.webm"
+          accept="*/*"
           className="hidden"
           onChange={handleFileChange}
         />
@@ -148,6 +156,9 @@ export function BolForm({ recording, onSubmit, onCancel, submitting }) {
             <Upload size={15} />
             Click to upload audio
           </button>
+        )}
+        {errors.audio && (
+          <p className="text-xs text-red-400">{errors.audio}</p>
         )}
       </div>
 
