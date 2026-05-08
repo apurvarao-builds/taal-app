@@ -55,11 +55,7 @@ export function BolForm({ recording, onSubmit, onCancel, submitting }) {
     const file = e.target.files?.[0]
     if (!file) return
 
-    const isAudio = file.type.startsWith('audio/') ||
       /\.(mp3|m4a|ogg|wav|opus|aac|flac|webm)$/i.test(file.name)
-    if (!isAudio) {
-      setErrors((err) => ({ ...err, audio: 'Please select an audio file' }))
-      return
     }
     setErrors((err) => ({ ...err, audio: undefined }))
     setAudioFile(file)
