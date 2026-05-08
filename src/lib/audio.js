@@ -35,6 +35,19 @@ export async function deleteAudio(path) {
   if (error) throw error
 }
 
+/** Download a Google Drive sharing URL and upload to Supabase Storage via Edge Function.
+ *  The file must be publicly shared ("Anyone with the link can view").
+ *  Returns the storage path string on success.
+ */
+export async function uploadFromUrl(userId, url) {
+  const { data, error } = await supabase.functions.invoke('upload-from-url', {
+    body: { url, user_id: userId },
+  })
+  if (error) throw error
+  if (!data?.path) throw new Error('No storage path returned from upload function')
+  return data.path
+}
+
 /** Upload a File object (from a device file input) to Supabase Storage.
  *  Preserves the original file extension and MIME type.
  *  Returns the storage path string on success.

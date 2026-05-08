@@ -34,7 +34,7 @@ export function useBolRecordings(filters = {}) {
   useEffect(() => { fetch() }, [fetch])
 
   async function createRecording(fields, audioFile) {
-    let audio_path = null
+    let audio_path = fields.audio_path ?? null
     let duration_sec = fields.duration_sec ?? null
 
     if (audioFile) {
@@ -61,10 +61,12 @@ export function useBolRecordings(filters = {}) {
     let duration_sec = fields.duration_sec ?? existing?.duration_sec ?? null
 
     if (audioFile) {
-      if (existing?.audio_path) {
-        await deleteAudio(existing.audio_path).catch(() => {})
-      }
+      if (existing?.audio_path) await deleteAudio(existing.audio_path).catch(() => {})
       audio_path = await uploadFile(user.id, audioFile)
+      duration_sec = fields.duration_sec ?? null
+    } else if (fields.audio_path && fields.audio_path !== existing?.audio_path) {
+      if (existing?.audio_path) await deleteAudio(existing.audio_path).catch(() => {})
+      audio_path = fields.audio_path
       duration_sec = fields.duration_sec ?? null
     }
 
