@@ -37,14 +37,14 @@ export function BolLibraryPage() {
     setTimeout(() => setToastMsg(''), 3000)
   }
 
-  async function handleSubmit(fields, audioFile) {
+  async function handleSubmit(fields, audioFile, driveDownloadUrl) {
     setSubmitting(true)
     try {
       if (editRecording) {
-        await updateRecording(editRecording.id, fields, audioFile)
+        await updateRecording(editRecording.id, fields, audioFile, driveDownloadUrl)
         toast('Recording updated')
       } else {
-        await createRecording(fields, audioFile)
+        await createRecording(fields, audioFile, driveDownloadUrl)
         toast('Recording added')
       }
       closeModal()
