@@ -3,7 +3,7 @@ import { Home, BookOpen, Library, Zap } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
 const nav = [
-  { to: '/',            label: 'Home',     Icon: Home,     end: true },
+  { to: '/',            label: 'Home',     Icon: Home,    end: true },
   { to: '/journal',     label: 'Journal',  Icon: BookOpen, end: false },
   { to: '/bol-library', label: 'Bols',     Icon: Library,  end: false },
   { to: '/practice',    label: 'Practice', Icon: Zap,      end: false },

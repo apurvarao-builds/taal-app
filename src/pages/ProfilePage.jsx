@@ -78,7 +78,7 @@ export function ProfilePage() {
           value={fields.gharana}
           onChange={(e) => set('gharana', e.target.value)}
         >
-          <option value="">Select gharana...</option>
+          <option value="">Select gharana…</option>
           {GHARANAS.map((g) => (
             <option key={g} value={g}>{g}</option>
           ))}
@@ -113,9 +113,14 @@ export function ProfilePage() {
 
         {error && <p className="text-xs text-red-400">{error}</p>}
 
-        <Button type="submit" disabled={saving} className="w-full justify-center" style={{ minHeight: '56px' }}>
+        <Button
+          type="submit"
+          disabled={saving}
+          className="w-full justify-center"
+          style={{ minHeight: '56px' }}
+        >
           <Save size={16} />
-          {saving ? 'Saving...' : saved ? 'Saved!' : 'Save profile'}
+          {saving ? 'Saving…' : saved ? 'Saved!' : 'Save profile'}
         </Button>
       </form>
 

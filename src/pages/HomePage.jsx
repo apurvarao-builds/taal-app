@@ -46,12 +46,8 @@ export function HomePage() {
 
   async function handleQuickRecord(fields, audio) {
     setSubmitting(true)
-    try {
-      await createEntry(fields, audio)
-      setRecordOpen(false)
-    } finally {
-      setSubmitting(false)
-    }
+    try { await createEntry(fields, audio); setRecordOpen(false) }
+    finally { setSubmitting(false) }
   }
 
   return (
@@ -75,7 +71,7 @@ export function HomePage() {
           <div>
             <div className="flex items-end gap-2">
               <span className="text-4xl font-bold text-gold">{streak}</span>
-              <span className="text-sm text-text-sub mb-1">day streak \U0001f525</span>
+              <span className="text-sm text-text-sub mb-1">day streak 🔥</span>
             </div>
             <p className="text-xs text-muted mt-1">
               {streak === 0 ? 'Start your streak today' : 'Keep it going!'}
@@ -106,7 +102,7 @@ export function HomePage() {
             key={to}
             onClick={() => navigate(to)}
             style={{ minHeight: '64px' }}
-            className={bg + ' ' + border + ' ' + text + ' border rounded-xl px-4 flex items-center gap-3 text-left transition-all active:scale-95'}
+            className={`${bg} ${border} ${text} border rounded-xl px-4 flex items-center gap-3 text-left transition-all active:scale-95`}
           >
             <Icon size={18} />
             <span className="text-sm font-medium">{label}</span>
