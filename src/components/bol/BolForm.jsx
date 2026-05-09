@@ -55,8 +55,6 @@ export function BolForm({ recording, onSubmit, onCancel, submitting }) {
     const file = e.target.files?.[0]
     if (!file) return
 
-      /\.(mp3|m4a|ogg|wav|opus|aac|flac|webm)$/i.test(file.name)
-    }
     setErrors((err) => ({ ...err, audio: undefined }))
     setAudioFile(file)
 
