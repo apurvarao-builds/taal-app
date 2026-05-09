@@ -4,7 +4,8 @@
       "Bash(npm run *)",
       "Bash(curl -s http://localhost:5173)",
       "Bash(kill %1)",
-      "Bash(grep -E \"\\\\.jsx$|\\\\.js$\")"
+      "Bash(grep -E \"\\\\.jsx$|\\\\.js$\")",
+      "Bash(npx supabase *)"
     ]
   }
 }
