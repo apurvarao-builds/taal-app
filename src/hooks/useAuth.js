@@ -3,23 +3,24 @@ import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 
 export function useAuthListener() {
-  const { setSession, setLoading } = useAuthStore()
+  const { setSession, setLoading, setRecoveryMode } = useAuthStore()
 
   useEffect(() => {
-    // Bootstrap session on mount
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
     })
 
-    // Keep in sync with Supabase auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          setRecoveryMode(true)
+        }
         setSession(session)
       }
     )
 
     return () => subscription.unsubscribe()
-  }, [setSession, setLoading])
+  }, [setSession, setLoading, setRecoveryMode])
 }
 
 export async function signIn(email, password) {
@@ -34,5 +35,17 @@ export async function signUp(email, password) {
 
 export async function signOut() {
   const { error } = await supabase.auth.signOut()
+  if (error) throw error
+}
+
+export async function resetPassword(email) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin,
+  })
+  if (error) throw error
+}
+
+export async function updatePassword(newPassword) {
+  const { error } = await supabase.auth.updateUser({ password: newPassword })
   if (error) throw error
 }
