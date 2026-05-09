@@ -1,20 +1,22 @@
 import { NavLink } from 'react-router-dom'
-import { BookOpen, FolderOpen, Library } from 'lucide-react'
+import { Home, BookOpen, Library, Zap } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
 const nav = [
-  { to: '/journal',     label: 'Journal',  Icon: BookOpen },
-  { to: '/projects',    label: 'Projects', Icon: FolderOpen },
-  { to: '/bol-library', label: 'Bols',     Icon: Library },
+  { to: '/',            label: 'Home',     Icon: Home,     end: true },
+  { to: '/journal',     label: 'Journal',  Icon: BookOpen, end: false },
+  { to: '/bol-library', label: 'Bols',     Icon: Library,  end: false },
+  { to: '/practice',    label: 'Practice', Icon: Zap,      end: false },
 ]
 
 export function BottomNav() {
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-surface border-t border-border z-40 flex safe-bottom">
-      {nav.map(({ to, label, Icon }) => (
+      {nav.map(({ to, label, Icon, end }) => (
         <NavLink
           key={to}
           to={to}
+          end={end}
           className={({ isActive }) =>
             cn(
               'flex-1 flex flex-col items-center justify-center py-3 text-xs transition-colors',
