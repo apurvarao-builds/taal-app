@@ -1,11 +1,11 @@
 import { useState, useRef } from 'react'
 import { format } from 'date-fns'
-import { Plus, X } from 'lucide-react'
+import { Plus, X, FileAudio, Upload } from 'lucide-react'
 import { Input, Textarea, Select } from '../ui/Input'
 import { Button } from '../ui/Button'
 import { AudioRecorderWidget } from './AudioRecorderWidget'
 import { AudioPlayer } from '../ui/AudioPlayer'
-import { CATEGORIES, ENTRY_TYPES } from '../../lib/utils'
+import { CATEGORIES, ENTRY_TYPES, formatDuration } from '../../lib/utils'
 
 const today = format(new Date(), 'yyyy-MM-dd')
 
@@ -26,9 +26,15 @@ export function EntryForm({ entry, projects, onSubmit, onCancel, submitting, onC
   const [newProjectName, setNewProjectName] = useState('')
   const [projectBusy, setProjectBusy] = useState(false)
 
+  const [audioMode, setAudioMode] = useState('record')
+
   const audioBlob = useRef(null)
   const audioDuration = useRef(null)
   const [hasNewAudio, setHasNewAudio] = useState(false)
+
+  const [audioFile, setAudioFile] = useState(null)
+  const [audioFileDuration, setAudioFileDuration] = useState(null)
+  const fileInputRef = useRef(null)
 
   function set(key, value) {
     setFields((f) => ({ ...f, [key]: value }))
@@ -47,9 +53,14 @@ export function EntryForm({ entry, projects, onSubmit, onCancel, submitting, onC
     const errs = validate()
     if (Object.keys(errs).length) { setErrors(errs); return }
 
+    const audio = audioMode === 'upload'
+      ? audioFile || undefined
+      : hasNewAudio ? audioBlob.current : undefined
+    const duration = audioMode === 'upload' ? audioFileDuration : audioDuration.current
+
     await onSubmit(
-      { ...fields, duration_sec: audioDuration.current },
-      hasNewAudio ? audioBlob.current : undefined,
+      { ...fields, duration_sec: duration },
+      audio,
     )
   }
 
@@ -69,7 +80,6 @@ export function EntryForm({ entry, projects, onSubmit, onCancel, submitting, onC
       setCreatingProject(false)
       setNewProjectName('')
     } catch {
-      // leave the input open so the user can retry
     } finally {
       setProjectBusy(false)
     }
@@ -79,6 +89,31 @@ export function EntryForm({ entry, projects, onSubmit, onCancel, submitting, onC
     audioBlob.current = null
     audioDuration.current = null
     setHasNewAudio(false)
+  }
+
+  function handleFileChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setAudioFile(file)
+
+    const url = URL.createObjectURL(file)
+    const audio = new Audio(url)
+    audio.addEventListener('loadedmetadata', () => {
+      setAudioFileDuration(isFinite(audio.duration) ? Math.round(audio.duration) : null)
+      URL.revokeObjectURL(url)
+    })
+  }
+
+  function clearFile() {
+    setAudioFile(null)
+    setAudioFileDuration(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  function switchMode(mode) {
+    setAudioMode(mode)
+    handleClear()
+    clearFile()
   }
 
   return (
@@ -183,21 +218,78 @@ export function EntryForm({ entry, projects, onSubmit, onCancel, submitting, onC
         rows={4}
       />
 
-      {/* Audio section */}
       <div className="space-y-2">
-        <p className="text-xs font-medium text-text-sub uppercase tracking-wider">
-          Recording
-        </p>
-        {isEdit && entry.audio_path && !hasNewAudio && (
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-medium text-text-sub uppercase tracking-wider">Recording</p>
+          <div className="flex bg-surface-2 rounded-lg p-0.5 gap-0.5">
+            <button
+              type="button"
+              onClick={() => switchMode('record')}
+              className={`px-2.5 py-1 text-xs rounded-md transition-colors ${audioMode === 'record' ? 'bg-gold/20 text-gold' : 'text-muted hover:text-text-sub'}`}
+            >
+              Record
+            </button>
+            <button
+              type="button"
+              onClick={() => switchMode('upload')}
+              className={`px-2.5 py-1 text-xs rounded-md transition-colors ${audioMode === 'upload' ? 'bg-gold/20 text-gold' : 'text-muted hover:text-text-sub'}`}
+            >
+              Upload
+            </button>
+          </div>
+        </div>
+
+        {isEdit && entry.audio_path && !hasNewAudio && !audioFile && (
           <div className="space-y-2">
             <AudioPlayer audioPath={entry.audio_path} />
-            <p className="text-xs text-muted">Record below to replace</p>
+            <p className="text-xs text-muted">
+              {audioMode === 'upload' ? 'Upload below to replace' : 'Record below to replace'}
+            </p>
           </div>
         )}
-        <AudioRecorderWidget onRecorded={handleRecorded} onClear={handleClear} />
+
+        {audioMode === 'record' ? (
+          <AudioRecorderWidget onRecorded={handleRecorded} onClear={handleClear} />
+        ) : (
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="audio/*"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            {audioFile ? (
+              <div className="flex items-center gap-3 bg-surface-2 border border-border rounded-lg px-3 py-2.5">
+                <FileAudio size={16} className="text-gold flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-text-main truncate">{audioFile.name}</p>
+                  {audioFileDuration != null && (
+                    <p className="text-xs text-muted">{formatDuration(audioFileDuration)}</p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={clearFile}
+                  className="p-1 rounded text-muted hover:text-red-400 hover:bg-red-900/20 transition-colors flex-shrink-0"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full flex items-center justify-center gap-2 border border-dashed border-border rounded-lg px-4 py-3 text-sm text-muted hover:text-text-sub hover:border-gold/40 hover:bg-surface-2/40 transition-colors"
+              >
+                <Upload size={15} />
+                Click to upload audio
+              </button>
+            )}
+          </>
+        )}
       </div>
 
-      {/* Actions */}
       <div className="flex items-center gap-3 pt-2 border-t border-border">
         <Button type="submit" disabled={submitting} className="flex-1 justify-center">
           {submitting ? 'Saving…' : isEdit ? 'Save changes' : 'Add entry'}

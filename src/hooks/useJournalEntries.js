@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
-import { deleteAudio, uploadAudio } from '../lib/audio'
+import { deleteAudio, uploadAudio, uploadFile } from '../lib/audio'
 
 export function useJournalEntries(filters = {}) {
   const user = useAuthStore((s) => s.user)
@@ -35,13 +35,14 @@ export function useJournalEntries(filters = {}) {
 
   useEffect(() => { fetch() }, [fetch])
 
-  /** Create a new entry. audioBlob is optional. */
   async function createEntry(fields, audioBlob) {
     let audio_path = null
     let duration_sec = fields.duration_sec ?? null
 
     if (audioBlob) {
-      audio_path = await uploadAudio(user.id, audioBlob)
+      audio_path = audioBlob instanceof File
+        ? await uploadFile(user.id, audioBlob)
+        : await uploadAudio(user.id, audioBlob)
     }
 
     const { error: err } = await supabase.from('journal_entries').insert({
@@ -60,18 +61,18 @@ export function useJournalEntries(filters = {}) {
     await fetch()
   }
 
-  /** Update an existing entry. audioBlob replaces existing audio if provided. */
   async function updateEntry(id, fields, audioBlob) {
     const existing = entries.find((e) => e.id === id)
     let audio_path = existing?.audio_path ?? null
     let duration_sec = fields.duration_sec ?? existing?.duration_sec ?? null
 
     if (audioBlob) {
-      // Delete old audio if present
       if (existing?.audio_path) {
         await deleteAudio(existing.audio_path).catch(() => {})
       }
-      audio_path = await uploadAudio(user.id, audioBlob)
+      audio_path = audioBlob instanceof File
+        ? await uploadFile(user.id, audioBlob)
+        : await uploadAudio(user.id, audioBlob)
     }
 
     const { error: err } = await supabase
@@ -93,7 +94,6 @@ export function useJournalEntries(filters = {}) {
     await fetch()
   }
 
-  /** Delete an entry and its associated audio. */
   async function deleteEntry(id) {
     const entry = entries.find((e) => e.id === id)
     if (entry?.audio_path) {
