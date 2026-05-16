@@ -25,7 +25,7 @@ export function useBolTranscriber() {
     recognitionRef.current = recognition
     recognition.continuous = true
     recognition.interimResults = true
-    recognition.lang = 'hi-IN'
+    recognition.lang = 'en-US'
 
     recognition.onresult = (e) => {
       let final = ''
