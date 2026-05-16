@@ -155,6 +155,10 @@ export function AuthPage() {
             )}
           </p>
         </div>
+
+        <p className="text-xs text-center text-muted mt-6">
+          <a href="/privacy" className="hover:text-text-sub transition-colors">Privacy Policy</a>
+        </p>
       </div>
     </div>
   )
