@@ -10,9 +10,10 @@ import { ProjectDetailPage } from './pages/ProjectDetailPage'
 import { BolLibraryPage } from './pages/BolLibraryPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { PracticePage } from './pages/PracticePage'
+import { PrivacyPage } from './pages/PrivacyPage'
 
 function AppRoutes() {
-  const { session, loading } = useAuthStore()
+  const { session, loading, recoveryMode } = useAuthStore()
 
   if (loading) {
     return (
@@ -22,9 +23,10 @@ function AppRoutes() {
     )
   }
 
-  if (!session) {
+  if (recoveryMode || !session) {
     return (
       <Routes>
+        <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="*" element={<AuthPage />} />
       </Routes>
     )
@@ -32,6 +34,7 @@ function AppRoutes() {
 
   return (
     <Routes>
+      <Route path="/privacy" element={<PrivacyPage />} />
       <Route element={<AppShell />}>
         <Route index element={<HomePage />} />
         <Route path="/journal"       element={<JournalPage />} />
