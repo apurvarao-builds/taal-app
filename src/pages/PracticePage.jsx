@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import { Mic, MicOff, RotateCcw, Music, ExternalLink, ChevronRight, Square, FileText, Circle } from 'lucide-react'
+import { Mic, MicOff, RotateCcw, Music, ExternalLink, ChevronRight, Square } from 'lucide-react'
 import { useBpmDetector } from '../hooks/useBpmDetector'
-import { useBolTranscriber } from '../hooks/useBolTranscriber'
 import { useSpotify } from '../hooks/useSpotify'
 import { cn } from '../lib/utils'
 
@@ -26,7 +25,6 @@ export function PracticePage() {
   const [fetching, setFetching] = useState(false)
   const [fetchErr, setFetchErr] = useState(null)
   const { phase, beatCount, liveBpm, finalBpm, error: bpmError, start, stop, reset } = useBpmDetector()
-  const { phase: txPhase, transcript, error: txError, start: txStart, stop: txStop, reset: txReset } = useBolTranscriber()
   const { getRecommendations } = useSpotify()
 
   async function handleFindMusic() {
@@ -157,55 +155,6 @@ export function PracticePage() {
           </div>
         </div>
       )}
-      <div className="border-t border-border pt-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-base font-semibold text-text-main">Bol Transcriber</h2>
-            <p className="text-xs text-text-sub mt-0.5">Say your bols — we'll write them down</p>
-          </div>
-          {txPhase === 'done' && (
-            <button onClick={txReset} className="text-xs text-muted hover:text-text-sub flex items-center gap-1 transition-colors">
-              <RotateCcw size={12} /> Clear
-            </button>
-          )}
-        </div>
-        {(txPhase === 'idle' || txPhase === 'error') && (
-          <div className="flex flex-col items-center py-6 space-y-4">
-            <button onClick={txStart} style={{ width: 72, height: 72 }}
-              className="rounded-full bg-surface border border-border hover:border-gold/40 flex items-center justify-center transition-all active:scale-95">
-              <FileText size={26} className="text-gold" />
-            </button>
-            <p className="text-xs text-text-sub text-center max-w-xs">Tap to start, speak your bols, then tap Stop</p>
-            {txPhase === 'error' && <p className="text-sm text-red-400 text-center max-w-xs">{txError}</p>}
-          </div>
-        )}
-        {txPhase === 'recording' && (
-          <div className="flex flex-col items-center py-6 space-y-4">
-            <div className="relative">
-              <span className="absolute inset-0 rounded-full bg-red-500/20 animate-ping" />
-              <button onClick={txStop} style={{ width: 72, height: 72 }}
-                className="relative rounded-full bg-red-900/30 border border-red-700/40 flex items-center justify-center transition-all active:scale-95">
-                <Circle size={18} className="text-red-400 fill-red-400" />
-              </button>
-            </div>
-            <p className="text-xs text-red-400">Recording — tap to stop</p>
-          </div>
-        )}
-        {txPhase === 'transcribing' && (
-          <div className="flex flex-col items-center py-8 space-y-3">
-            <div className="w-6 h-6 rounded-full border-2 border-gold/30 border-t-gold animate-spin" />
-            <p className="text-xs text-text-sub">Transcribing...</p>
-          </div>
-        )}
-        {txPhase === 'done' && transcript && (
-          <div className="bg-surface border border-border rounded-xl p-4">
-            <p className="text-sm text-text-main leading-relaxed font-mono tracking-wide">{transcript}</p>
-          </div>
-        )}
-        {txPhase === 'done' && !transcript && (
-          <div className="text-center py-4 text-text-sub text-sm">Nothing was detected — try again.</div>
-        )}
-      </div>
     </div>
   )
 }
