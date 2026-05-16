@@ -10,6 +10,7 @@ import { ProjectDetailPage } from './pages/ProjectDetailPage'
 import { BolLibraryPage } from './pages/BolLibraryPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { PracticePage } from './pages/PracticePage'
+import { TaalPage } from './pages/TaalPage'
 import { PrivacyPage } from './pages/PrivacyPage'
 
 function AppRoutes() {
@@ -42,6 +43,7 @@ function AppRoutes() {
         <Route path="/projects/:id"  element={<ProjectDetailPage />} />
         <Route path="/bol-library"   element={<BolLibraryPage />} />
         <Route path="/practice"      element={<PracticePage />} />
+        <Route path="/taals"         element={<TaalPage />} />
         <Route path="/profile"       element={<ProfilePage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

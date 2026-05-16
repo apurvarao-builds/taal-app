@@ -1,12 +1,12 @@
 import { NavLink } from 'react-router-dom'
-import { Home, BookOpen, Library, Zap } from 'lucide-react'
+import { Home, BookOpen, Zap, Drum } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
 const nav = [
-  { to: '/',            label: 'Home',     Icon: Home,    end: true },
-  { to: '/journal',     label: 'Journal',  Icon: BookOpen, end: false },
-  { to: '/bol-library', label: 'Bols',     Icon: Library,  end: false },
-  { to: '/practice',    label: 'Practice', Icon: Zap,      end: false },
+  { to: '/',          label: 'Home',     Icon: Home,    end: true },
+  { to: '/journal',   label: 'Journal',  Icon: BookOpen, end: false },
+  { to: '/practice',  label: 'Practice', Icon: Zap,      end: false },
+  { to: '/taals',     label: 'Taals',    Icon: Drum,     end: false },
 ]
 
 export function BottomNav() {

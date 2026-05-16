@@ -1,10 +1,8 @@
 import { useState } from 'react'
-import { Mic, MicOff, RotateCcw, Music, ExternalLink, ChevronRight, Square } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Mic, MicOff, RotateCcw, Square, Drum } from 'lucide-react'
 import { useBpmDetector } from '../hooks/useBpmDetector'
-import { useSpotify } from '../hooks/useSpotify'
 import { cn } from '../lib/utils'
-
-const GENRES = ['Bollywood', 'Hindustani Classical', 'Fusion', 'Any']
 
 const LAYA_LEVELS = [
   { max: 45,  name: 'Vilambit',  sub: 'Slow',         color: 'text-indigo-light' },
@@ -20,41 +18,17 @@ function getLaya(bpm) {
 }
 
 export function PracticePage() {
-  const [genre, setGenre]       = useState('Any')
-  const [tracks, setTracks]     = useState(null)
-  const [fetching, setFetching] = useState(false)
-  const [fetchErr, setFetchErr] = useState(null)
+  const navigate = useNavigate()
   const { phase, beatCount, liveBpm, finalBpm, error: bpmError, start, stop, reset } = useBpmDetector()
-  const { getRecommendations } = useSpotify()
-
-  async function handleFindMusic() {
-    setFetching(true); setFetchErr(null); setTracks(null)
-    try { const results = await getRecommendations(finalBpm, genre); setTracks(results) }
-    catch (err) { setFetchErr(err.message) }
-    finally { setFetching(false) }
-  }
-
-  function handleRetry() { setTracks(null); setFetchErr(null); reset() }
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-text-main">Practice Mode</h1>
-        <p className="text-sm text-text-sub mt-1">Clap your bol &mdash; we'll detect the BPM and find matching music.</p>
+        <p className="text-sm text-text-sub mt-1">Clap or tap your bol — we'll detect the tempo and laya.</p>
       </div>
-      <div>
-        <p className="text-xs text-muted mb-2 uppercase tracking-wider">Genre</p>
-        <div className="flex flex-wrap gap-2">
-          {GENRES.map((g) => (
-            <button key={g} onClick={() => setGenre(g)}
-              className={cn('px-4 py-2 rounded-full text-sm font-medium border transition-colors',
-                genre === g ? 'bg-gold/20 border-gold/50 text-gold' : 'bg-surface border-border text-text-sub hover:border-gold/30 hover:text-text-main')}>
-              {g}
-            </button>
-          ))}
-        </div>
-      </div>
-      {(phase === 'idle' || phase === 'listening' || phase === 'error') && !tracks && (
+
+      {(phase === 'idle' || phase === 'listening' || phase === 'error') && (
         <div className="flex flex-col items-center py-8 space-y-6">
           <div className="relative">
             {phase === 'listening' && (<>
@@ -68,7 +42,7 @@ export function PracticePage() {
               <Mic size={36} />
             </button>
           </div>
-          {phase === 'idle' && <p className="text-sm text-text-sub text-center max-w-xs">Tap the mic, then clap steadily for 8&ndash;16 beats</p>}
+          {phase === 'idle' && <p className="text-sm text-text-sub text-center max-w-xs">Tap the mic, then clap or speak your bols steadily</p>}
           {phase === 'listening' && (
             <div className="text-center space-y-3">
               <div>
@@ -76,7 +50,7 @@ export function PracticePage() {
                 {liveBpm && (() => { const l = getLaya(liveBpm); return (
                   <p className={`text-sm font-medium mt-0.5 ${l.color}`}>{l.name} · {l.sub}</p>
                 )})()}
-                <p className="text-sm text-text-sub mt-1">{beatCount} beat{beatCount !== 1 ? 's' : ''} detected — keep clapping</p>
+                <p className="text-sm text-text-sub mt-1">{beatCount} beat{beatCount !== 1 ? 's' : ''} detected — keep going</p>
               </div>
               <button onClick={stop} className="flex items-center gap-2 text-sm text-text-sub hover:text-text-main border border-border hover:border-gold/30 rounded-xl px-4 py-2 transition-colors">
                 <Square size={13} fill="currentColor" /> Stop
@@ -96,65 +70,33 @@ export function PracticePage() {
           )}
         </div>
       )}
-      {phase === 'detected' && !tracks && !fetching && (() => {
+
+      {phase === 'detected' && (() => {
         const laya = getLaya(finalBpm)
         return (
-        <div className="flex flex-col items-center py-8 space-y-5">
-          <div className="text-center">
-            <p className="text-xs text-muted uppercase tracking-wider mb-1">Detected tempo</p>
-            <p className="text-6xl font-bold text-gold tabular-nums">{finalBpm}</p>
-            <p className="text-lg text-text-sub mt-1">BPM</p>
-            <div className="mt-3 inline-flex items-center gap-2 bg-surface border border-border rounded-full px-4 py-1.5">
-              <span className={`text-base font-semibold ${laya.color}`}>{laya.name}</span>
-              <span className="text-xs text-muted">·</span>
-              <span className="text-xs text-text-sub">{laya.sub}</span>
+          <div className="flex flex-col items-center py-8 space-y-5">
+            <div className="text-center">
+              <p className="text-xs text-muted uppercase tracking-wider mb-1">Detected tempo</p>
+              <p className="text-6xl font-bold text-gold tabular-nums">{finalBpm}</p>
+              <p className="text-lg text-text-sub mt-1">BPM</p>
+              <div className="mt-3 inline-flex items-center gap-2 bg-surface border border-border rounded-full px-4 py-1.5">
+                <span className={`text-base font-semibold ${laya.color}`}>{laya.name}</span>
+                <span className="text-xs text-muted">·</span>
+                <span className="text-xs text-text-sub">{laya.sub}</span>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={reset} className="flex items-center gap-2 px-5 py-3 rounded-xl border border-border text-sm text-text-sub hover:text-text-main hover:border-gold/30 transition-colors">
+                <RotateCcw size={14} /> Detect again
+              </button>
+              <button onClick={() => navigate(`/taals?bpm=${finalBpm}`)}
+                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-surface border border-border hover:border-gold/30 text-sm text-text-sub hover:text-text-main transition-colors">
+                <Drum size={14} /> See taals
+              </button>
             </div>
           </div>
-          {fetchErr && <p className="text-sm text-red-400 text-center max-w-xs">{fetchErr}</p>}
-          <div className="flex gap-3">
-            <button onClick={handleRetry} className="px-5 py-3 rounded-xl border border-border text-sm text-text-sub hover:text-text-main hover:border-gold/30 transition-colors">
-              <RotateCcw size={14} className="inline mr-1.5" /> Retry
-            </button>
-            <button onClick={handleFindMusic} style={{ minHeight: '48px' }}
-              className="px-6 py-3 rounded-xl bg-gold hover:bg-gold-light text-bg font-semibold text-sm flex items-center gap-2 transition-colors active:scale-95">
-              <Music size={16} /> Find Music <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
         )
       })()}
-      {fetching && (
-        <div className="flex flex-col items-center py-12 space-y-3">
-          <div className="w-8 h-8 rounded-full border-2 border-gold/30 border-t-gold animate-spin" />
-          <p className="text-sm text-text-sub">Finding tracks near {finalBpm} BPM...</p>
-        </div>
-      )}
-      {tracks && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-text-main">{tracks.length} tracks &middot; {finalBpm} BPM &middot; {genre}</p>
-            <button onClick={handleRetry} className="text-xs text-muted hover:text-text-sub flex items-center gap-1 transition-colors">
-              <RotateCcw size={12} /> New search
-            </button>
-          </div>
-          {tracks.length === 0 && <div className="text-center py-10 text-text-sub text-sm">No tracks found. Try a different genre.</div>}
-          <div className="space-y-2">
-            {tracks.map((track) => (
-              <a key={track.id} href={track.external_urls.spotify} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-3 bg-surface border border-border hover:border-gold/30 rounded-xl p-3 transition-colors group">
-                {track.album?.images?.[2]?.url
-                  ? <img src={track.album.images[2].url} alt={track.album.name} className="w-12 h-12 rounded-lg flex-shrink-0 object-cover" />
-                  : <div className="w-12 h-12 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0"><Music size={18} className="text-muted" /></div>}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-text-main truncate">{track.name}</p>
-                  <p className="text-xs text-text-sub truncate">{track.artists?.map((a) => a.name).join(', ')}</p>
-                </div>
-                <ExternalLink size={14} className="text-muted group-hover:text-gold flex-shrink-0 transition-colors" />
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
