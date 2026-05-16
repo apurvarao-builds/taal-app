@@ -4,10 +4,11 @@ const MAX_BEATS = 20
 const MIN_BEATS = 4
 const TIMEOUT_MS = 20000
 const POLL_MS = 50
-const COOLDOWN_MS = 250
+const COOLDOWN_MS = 300
 const HISTORY = 40
-const BEAT_RATIO = 1.4
-const MIN_RMS = 0.006
+const BEAT_RATIO = 1.6
+const MIN_RMS = 0.008
+const MIN_RISE = 0.015
 
 function medianBpm(times) {
   if (times.length < 2) return null
@@ -34,6 +35,7 @@ export function useBpmDetector() {
   const beatTimes  = useRef([])
   const lastBeat   = useRef(0)
   const energyHist = useRef([])
+  const prevRms    = useRef(0)
 
   const cleanup = useCallback(() => {
     clearInterval(pollRef.current)
@@ -54,7 +56,7 @@ export function useBpmDetector() {
   const start = useCallback(async () => {
     cleanup()
     setError(null); setBeatCount(0); setLiveBpm(null); setFinalBpm(null)
-    beatTimes.current = []; lastBeat.current = 0; energyHist.current = []
+    beatTimes.current = []; lastBeat.current = 0; energyHist.current = []; prevRms.current = 0
     setPhase('listening')
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
@@ -76,7 +78,11 @@ export function useBpmDetector() {
         const avg = energyHist.current.reduce((s, v) => s + v, 0) / energyHist.current.length
         const now = performance.now()
         const warmup = energyHist.current.length >= 10
-        if (warmup && rms > MIN_RMS && rms > avg * BEAT_RATIO && now - lastBeat.current > COOLDOWN_MS) {
+        const energyRise = rms - prevRms.current
+        prevRms.current = rms
+        const isBeat = warmup && rms > MIN_RMS && now - lastBeat.current > COOLDOWN_MS &&
+          (rms > avg * BEAT_RATIO || energyRise > MIN_RISE)
+        if (isBeat) {
           lastBeat.current = now
           beatTimes.current.push(now)
           const count = beatTimes.current.length
@@ -96,10 +102,19 @@ export function useBpmDetector() {
     }
   }, [cleanup, finish])
 
+  const stopEarly = useCallback(() => {
+    if (beatTimes.current.length >= MIN_BEATS) {
+      finish(beatTimes.current)
+    } else {
+      cleanup()
+      setPhase('idle')
+    }
+  }, [cleanup, finish])
+
   const reset = useCallback(() => {
     cleanup()
     setPhase('idle'); setBeatCount(0); setLiveBpm(null); setFinalBpm(null); setError(null)
   }, [cleanup])
 
-  return { phase, beatCount, liveBpm, finalBpm, error, start, reset }
+  return { phase, beatCount, liveBpm, finalBpm, error, start, stop: stopEarly, reset }
 }
