@@ -18,7 +18,7 @@ function medianBpm(times) {
   const m = Math.floor(intervals.length / 2)
   const median = intervals.length % 2 === 0 ? (intervals[m - 1] + intervals[m]) / 2 : intervals[m]
   const bpm = Math.round(60000 / median)
-  return bpm >= 40 && bpm <= 240 ? bpm : null
+  return bpm >= 20 && bpm <= 240 ? bpm : null
 }
 
 export function useBpmDetector() {

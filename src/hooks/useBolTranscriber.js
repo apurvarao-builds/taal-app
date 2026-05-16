@@ -1,73 +1,67 @@
 import { useState, useRef, useCallback } from 'react'
-import { supabase } from '../lib/supabase'
 
 export function useBolTranscriber() {
   const [phase, setPhase]           = useState('idle')
   const [transcript, setTranscript] = useState('')
   const [error, setError]           = useState(null)
 
-  const mediaRef    = useRef(null)
-  const chunksRef   = useRef([])
-  const streamRef   = useRef(null)
+  const recognitionRef = useRef(null)
+  const accumulatedRef = useRef('')
 
-  const start = useCallback(async () => {
+  const start = useCallback(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SpeechRecognition) {
+      setError('Speech recognition is not supported in this browser. Use Chrome or Safari.')
+      setPhase('error')
+      return
+    }
+
     setPhase('recording')
     setTranscript('')
     setError(null)
-    chunksRef.current = []
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-      streamRef.current = stream
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-        ? 'audio/webm;codecs=opus'
-        : 'audio/mp4'
-      const recorder = new MediaRecorder(stream, { mimeType })
-      mediaRef.current = recorder
-      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data) }
-      recorder.start(100)
-    } catch (err) {
-      setError(err.name === 'NotAllowedError' ? 'Microphone access was denied.' : err.message)
+    accumulatedRef.current = ''
+
+    const recognition = new SpeechRecognition()
+    recognitionRef.current = recognition
+    recognition.continuous = true
+    recognition.interimResults = true
+    recognition.lang = 'hi-IN'
+
+    recognition.onresult = (e) => {
+      let final = ''
+      for (let i = 0; i < e.results.length; i++) {
+        if (e.results[i].isFinal) final += e.results[i][0].transcript + ' '
+      }
+      if (final) accumulatedRef.current = final
+      let interim = accumulatedRef.current
+      for (let i = e.results.length - 1; i >= 0; i--) {
+        if (!e.results[i].isFinal) { interim += e.results[i][0].transcript; break }
+      }
+      setTranscript(interim.trim())
+    }
+
+    recognition.onerror = (e) => {
+      if (e.error === 'no-speech') return
+      setError(`Recognition error: ${e.error}`)
       setPhase('error')
     }
+
+    recognition.onend = () => {
+      setTranscript(accumulatedRef.current.trim())
+      setPhase('done')
+    }
+
+    recognition.start()
   }, [])
 
-  const stop = useCallback(async () => {
-    if (!mediaRef.current || mediaRef.current.state === 'inactive') return
-    setPhase('transcribing')
-    await new Promise((resolve) => {
-      mediaRef.current.onstop = resolve
-      mediaRef.current.stop()
-    })
-    streamRef.current?.getTracks().forEach((t) => t.stop())
-    streamRef.current = null
-    try {
-      const blob = new Blob(chunksRef.current, { type: mediaRef.current.mimeType })
-      const form = new FormData()
-      form.append('audio', blob, 'bol.webm')
-      const { data: { session } } = await supabase.auth.getSession()
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/transcribe-bol`,
-        {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${session.access_token}` },
-          body: form,
-        },
-      )
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error || 'Transcription failed')
-      setTranscript(json.transcript)
-      setPhase('done')
-    } catch (err) {
-      setError(err.message)
-      setPhase('error')
-    }
+  const stop = useCallback(() => {
+    recognitionRef.current?.stop()
   }, [])
 
   const reset = useCallback(() => {
-    mediaRef.current?.state !== 'inactive' && mediaRef.current?.stop()
-    streamRef.current?.getTracks().forEach((t) => t.stop())
-    streamRef.current = null
-    chunksRef.current = []
+    recognitionRef.current?.abort()
+    recognitionRef.current = null
+    accumulatedRef.current = ''
     setPhase('idle')
     setTranscript('')
     setError(null)
