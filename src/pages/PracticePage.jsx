@@ -1,17 +1,32 @@
 import { useState } from 'react'
-import { Mic, MicOff, RotateCcw, Music, ExternalLink, ChevronRight } from 'lucide-react'
+import { Mic, MicOff, RotateCcw, Music, ExternalLink, ChevronRight, Square, FileText, Circle } from 'lucide-react'
 import { useBpmDetector } from '../hooks/useBpmDetector'
+import { useBolTranscriber } from '../hooks/useBolTranscriber'
 import { useSpotify } from '../hooks/useSpotify'
 import { cn } from '../lib/utils'
 
 const GENRES = ['Bollywood', 'Hindustani Classical', 'Fusion', 'Any']
+
+const LAYA_LEVELS = [
+  { max: 45,  name: 'Vilambit',  sub: 'Slow',         color: 'text-indigo-light' },
+  { max: 90,  name: 'Madhya',    sub: 'Medium',        color: 'text-gold' },
+  { max: 150, name: 'Drut',      sub: 'Fast',          color: 'text-saffron-light' },
+  { max: 210, name: 'Dugun',     sub: 'Double speed',  color: 'text-burgundy-light' },
+  { max: 300, name: 'Chougun',   sub: 'Quad speed',    color: 'text-red-400' },
+  { max: Infinity, name: 'Athgun', sub: 'Octal speed', color: 'text-red-500' },
+]
+
+function getLaya(bpm) {
+  return LAYA_LEVELS.find((l) => bpm <= l.max) ?? LAYA_LEVELS[LAYA_LEVELS.length - 1]
+}
 
 export function PracticePage() {
   const [genre, setGenre]       = useState('Any')
   const [tracks, setTracks]     = useState(null)
   const [fetching, setFetching] = useState(false)
   const [fetchErr, setFetchErr] = useState(null)
-  const { phase, beatCount, liveBpm, finalBpm, error: bpmError, start, reset } = useBpmDetector()
+  const { phase, beatCount, liveBpm, finalBpm, error: bpmError, start, stop, reset } = useBpmDetector()
+  const { phase: txPhase, transcript, error: txError, start: txStart, stop: txStop, reset: txReset } = useBolTranscriber()
   const { getRecommendations } = useSpotify()
 
   async function handleFindMusic() {
@@ -57,9 +72,17 @@ export function PracticePage() {
           </div>
           {phase === 'idle' && <p className="text-sm text-text-sub text-center max-w-xs">Tap the mic, then clap steadily for 8&ndash;16 beats</p>}
           {phase === 'listening' && (
-            <div className="text-center space-y-1">
-              <p className="text-3xl font-bold text-gold tabular-nums">{liveBpm ? `${liveBpm} BPM` : '...'}</p>
-              <p className="text-sm text-text-sub">{beatCount} beat{beatCount !== 1 ? 's' : ''} detected &mdash; keep clapping</p>
+            <div className="text-center space-y-3">
+              <div>
+                <p className="text-3xl font-bold text-gold tabular-nums">{liveBpm ? `${liveBpm} BPM` : '...'}</p>
+                {liveBpm && (() => { const l = getLaya(liveBpm); return (
+                  <p className={`text-sm font-medium mt-0.5 ${l.color}`}>{l.name} · {l.sub}</p>
+                )})()}
+                <p className="text-sm text-text-sub mt-1">{beatCount} beat{beatCount !== 1 ? 's' : ''} detected — keep clapping</p>
+              </div>
+              <button onClick={stop} className="flex items-center gap-2 text-sm text-text-sub hover:text-text-main border border-border hover:border-gold/30 rounded-xl px-4 py-2 transition-colors">
+                <Square size={13} fill="currentColor" /> Stop
+              </button>
             </div>
           )}
           {phase === 'error' && (
@@ -75,12 +98,19 @@ export function PracticePage() {
           )}
         </div>
       )}
-      {phase === 'detected' && !tracks && !fetching && (
+      {phase === 'detected' && !tracks && !fetching && (() => {
+        const laya = getLaya(finalBpm)
+        return (
         <div className="flex flex-col items-center py-8 space-y-5">
           <div className="text-center">
             <p className="text-xs text-muted uppercase tracking-wider mb-1">Detected tempo</p>
             <p className="text-6xl font-bold text-gold tabular-nums">{finalBpm}</p>
             <p className="text-lg text-text-sub mt-1">BPM</p>
+            <div className="mt-3 inline-flex items-center gap-2 bg-surface border border-border rounded-full px-4 py-1.5">
+              <span className={`text-base font-semibold ${laya.color}`}>{laya.name}</span>
+              <span className="text-xs text-muted">·</span>
+              <span className="text-xs text-text-sub">{laya.sub}</span>
+            </div>
           </div>
           {fetchErr && <p className="text-sm text-red-400 text-center max-w-xs">{fetchErr}</p>}
           <div className="flex gap-3">
@@ -93,7 +123,8 @@ export function PracticePage() {
             </button>
           </div>
         </div>
-      )}
+        )
+      })()}
       {fetching && (
         <div className="flex flex-col items-center py-12 space-y-3">
           <div className="w-8 h-8 rounded-full border-2 border-gold/30 border-t-gold animate-spin" />
@@ -126,6 +157,55 @@ export function PracticePage() {
           </div>
         </div>
       )}
+      <div className="border-t border-border pt-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-base font-semibold text-text-main">Bol Transcriber</h2>
+            <p className="text-xs text-text-sub mt-0.5">Say your bols — we'll write them down</p>
+          </div>
+          {txPhase === 'done' && (
+            <button onClick={txReset} className="text-xs text-muted hover:text-text-sub flex items-center gap-1 transition-colors">
+              <RotateCcw size={12} /> Clear
+            </button>
+          )}
+        </div>
+        {(txPhase === 'idle' || txPhase === 'error') && (
+          <div className="flex flex-col items-center py-6 space-y-4">
+            <button onClick={txStart} style={{ width: 72, height: 72 }}
+              className="rounded-full bg-surface border border-border hover:border-gold/40 flex items-center justify-center transition-all active:scale-95">
+              <FileText size={26} className="text-gold" />
+            </button>
+            <p className="text-xs text-text-sub text-center max-w-xs">Tap to start, speak your bols, then tap Stop</p>
+            {txPhase === 'error' && <p className="text-sm text-red-400 text-center max-w-xs">{txError}</p>}
+          </div>
+        )}
+        {txPhase === 'recording' && (
+          <div className="flex flex-col items-center py-6 space-y-4">
+            <div className="relative">
+              <span className="absolute inset-0 rounded-full bg-red-500/20 animate-ping" />
+              <button onClick={txStop} style={{ width: 72, height: 72 }}
+                className="relative rounded-full bg-red-900/30 border border-red-700/40 flex items-center justify-center transition-all active:scale-95">
+                <Circle size={18} className="text-red-400 fill-red-400" />
+              </button>
+            </div>
+            <p className="text-xs text-red-400">Recording — tap to stop</p>
+          </div>
+        )}
+        {txPhase === 'transcribing' && (
+          <div className="flex flex-col items-center py-8 space-y-3">
+            <div className="w-6 h-6 rounded-full border-2 border-gold/30 border-t-gold animate-spin" />
+            <p className="text-xs text-text-sub">Transcribing...</p>
+          </div>
+        )}
+        {txPhase === 'done' && transcript && (
+          <div className="bg-surface border border-border rounded-xl p-4">
+            <p className="text-sm text-text-main leading-relaxed font-mono tracking-wide">{transcript}</p>
+          </div>
+        )}
+        {txPhase === 'done' && !transcript && (
+          <div className="text-center py-4 text-text-sub text-sm">Nothing was detected — try again.</div>
+        )}
+      </div>
     </div>
   )
 }
