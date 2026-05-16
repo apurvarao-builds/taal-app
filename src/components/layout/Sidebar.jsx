@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { Home, BookOpen, FolderOpen, Library, Zap, User, Drum } from 'lucide-react'
+import { Home, BookOpen, FolderOpen, Library, Zap, User, Drum, HelpCircle } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import { cn } from '../../lib/utils'
 
@@ -12,7 +12,7 @@ const nav = [
   { to: '/taals',       label: 'Taals',       Icon: Drum,       end: false },
 ]
 
-export function Sidebar() {
+export function Sidebar({ onHelp }) {
   const user = useAuthStore((s) => s.user)
   const navigate = useNavigate()
   const meta = user?.user_metadata ?? {}
@@ -37,7 +37,12 @@ export function Sidebar() {
           </NavLink>
         ))}
       </nav>
-      <div className="border-t border-border pt-3 mt-3">
+      <div className="border-t border-border pt-3 mt-3 space-y-1">
+        <button onClick={onHelp}
+          className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-text-sub hover:bg-surface-2 hover:text-text-main transition-colors">
+          <HelpCircle size={16} className="flex-shrink-0" />
+          <span>Help</span>
+        </button>
         <button onClick={() => navigate('/profile')}
           className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-text-sub hover:bg-surface-2 hover:text-text-main transition-colors">
           <div className="w-6 h-6 rounded-full bg-gold/20 flex items-center justify-center text-gold text-xs font-bold flex-shrink-0">
