@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
-import { supabase } from '../lib/supabaseClient'
+import { supabase } from '../lib/supabase'
 
 export function useBolTranscriber() {
   const [phase, setPhase]           = useState('idle')
